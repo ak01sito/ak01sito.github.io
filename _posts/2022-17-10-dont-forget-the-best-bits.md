@@ -7,9 +7,10 @@ tags: [reply,aes,cbc,bit_flipping]
 
 This post is an attempt to document what I learned during the crypto200 challenge organized by [Reply Challenges](https://challenges.reply.com/tamtamy/home.action) last weekend. It was my first CTF and for sure not the last one!
 
-# Initial View and Idea
-To solve the challenge, we had some files to download as well as a URL. On the URL we could find a textbox with a submit button, and a message telling us to submit an encrypted message. 
+# Overview
+To solve the challenge, we had some files to download (`notes.txt`, `app.snippet`, `_aes.py`) as well as a [URL](http://gamebox1.reply.it/14de018c45487063d3bc11fe33ac7e6996914988/). To find out what we need to solve here, let's take a look at all those things they gave us. 
 
+On the URL we could find a textbox with a submit button, and a message telling us to submit an encrypted message. 
 ![website](/images/reply-crypto200-web.png)
 
 When we enter any random message, we get the text `Bad ciphertext provided!`.
@@ -81,7 +82,7 @@ We have two questions to solve then.
 1.  Which user is the correct one that will give us the flag?
 2.  How do we craft a modified message which the server can decrypt, if we don’t have the `key` nor the `iv` used by the server?
 
-# GETTING THE CORRECT USER
+# Getting the Right User
 
 Let’s first deal with the easier question. In the first file, we got quite an insistent message, telling us to "listen to new music", to "check the titles", and again telling us that music is “flipping amazing”. They also wrote the title ("Don't forget the best bits") again in the file, even though we could see it on the web at any point. Seems like they are trying to tell us something…
 
@@ -89,7 +90,7 @@ Let’s first deal with the easier question. In the first file, we got quite an 
 
 Yup, that’s definitely it. The first idea I’m getting is that the user could be `Franz`, since that’s the name of the band. After looking at the lyrics, though, I see a lot of mentions of `Billy`. So when it's time to insert the user, I'll try both of those.
 
-# UNDERSTANDING THE ALGORITHM
+# Understanding the Algorithm
 
 As we saw, they are using `AES` (or Advanced Encryption Standard) with the `CBC mode` (or Cipher Block Chaining mode). The way this algorithm encrypts is first dividing the plaintext in blocks of 16 bytes or characters. The `key` is then used on each block in order to encrypt them. **Yet that’s not everything.** In addition, each block of ciphertext C<sub>i</sub> is used to perform an _XOR_ operation on the next plaintext block P<sub>i+1</sub>before it gets encrypted. This way, two identical blocks would never look the same even though they are encrypted using the same key. In order to _XOR_ the first plaintext block we use an `iv` (Initial Vector). The following picture illustrates this:
 
@@ -106,7 +107,7 @@ In order to decrypt, we use the reverse process than to encrypt, so each cipher
 
 ![website](/images/reply-crypto200-cbc-decryption.png)
 
-# BIT FLIPPING
+# Bit Flipping
 I’ll admit I was a bit lost at the beginning. How can I generate a new ciphertext with a different username if I’m missing the `key` and the `iv`? It made no sense. I thought about padding oracle. Since the 16 byte padding seemed, in my absolute ignorance on the topic, like a curious thing to have. 
 
 After a while, I remembered the time a good friend of mine solved a crypto problem with something called bit flipping attack… and… that sounds familiar… could it be…
@@ -115,7 +116,7 @@ After a while, I remembered the time a good friend of mine solved a crypto probl
 
 They wrote this in the first file I read! Ok, it had to be this. I was investigating the bit flipping attack for a while, and came across [this post](https://alicegg.tech/2019/06/23/aes-cbc.html): and I just saw it SO CLEARLY. So let’s explain it a bit.
 
-This attack works when we manage to get into our hands a ciphertext and its respective plaintext (Oh wait, we do!). Since the blocks have a specific length, we know in which block is the data we need/want to modify, and also which block of ciphertext will perform the _XOR_ operation on this data after its decryption. Using our challenge as example, we know that the data is on block C<sub>i+1</sub> (Since we can read it in P<sub>i+1</sub>), and we also know that C<sub>i</sub> will be XORed with it in order to reveal the plaintext P<sub>i+1</sub>.
+This attack works when we manage to get into our hands a ciphertext and its respective plaintext (Oh wait, we do!). Since the blocks have a specific length, we know in which block the data we need/want to modify is, and also which block of ciphertext will perform the _XOR_ operation on this data after its decryption. Using our challenge as example, we know that the data is on block C<sub>i+1</sub> (since we can read it in P<sub>i+1</sub>), and we also know that C<sub>i</sub> will be XORed with it in order to reveal the plaintext P<sub>i+1</sub>.
 ![website](/images/reply-crypto200-clear-cipher.png)
 
 That means, that we can change some parts of a ciphertext block C<sub>i</sub>, and that will end affecting the result of the next plaintext block P<sub>i+1</sub>.
@@ -137,11 +138,13 @@ In the second case (red), we modify a ciphertext block C<sub>i</sub>, which will
 
 In our case the block C<sub>i</sub> contains part of a message which is completely irrelevant for us (`lipping%20amazin`). Since it doesn’t look like the server will be checking it, we can perform the flipping attack using the second case.
   
-# IMPLEMENTATION
+# Implementation
 
 Now that we know exactly what to do, let's do it!
 
-First of all, we want to know **which exact bits we need to flip in P<sub>i+1</sub>** so that instead of `mario`, the user is either `franz` or `billy`. At the end the user ended up being `billy`, so I will use it as value for the user for the explanation. To know the bits that need to be different, we need to _XOR_ the two plaintext block messages:
+First of all, we want to know **which exact bits we need to flip in P<sub>i+1</sub>** so that instead of `mario`, the user is either `billy` or `franz`. See that both usernames are still possible since they have the same number of characters than user `mario`. We can only flip bits, but not add new ones or remove them. I will use `billy` for the explanation below, but the process will be the same with the other username.
+
+To know the bits that need to be different, we need to _XOR_ the two plaintext block messages:
 ```python
 def xor_messages(a,b,size=32):
     # messages must be in hexadecimal like "9bc423909ac569b5016525cb4b2660b5"
@@ -171,15 +174,16 @@ bit_flipping = xor_messages(wanted_block, diff_bits)
 result = ''.join(cipher_blocks[:12]) + bit_flipping + ''.join(cipher_blocks[-2:]
 ```
 
-When we execute the script we get the new ciphertext: `482c74deadaee362185c315aa10bcd02c96d2417fe3d1adf7fd90da2da95ca16ff9bb7b20b1ed3ac22c93bd3ac7f8d790768379407181f93bbc2c5bde5da5a4e47b400ed0827d815c47b4793349d894a557dd4436a7e2d7967b09faeff6b7037e5ba40202e850c0640414ffd651847bff2fe50ac248ac63cd595339b6fa9ee78f2835d29176d524ab9116894eab6ad5fd56c6600670d1f5bc4e48dfdaed740d1e3b3f1c05a067fbeb69e0a67226755569f185120d5b393131ecd3c209123994135a62d029cc5072264cd6cac0eb9d4ea8a63ae9b9675ecace48745f049d5d742639e2df80675ad114938eb641a8b1704
-`
-Finally, we just need to send it to the website and get our flag: 
+When we execute the script we get the new ciphertext: `482c74deadaee362185c315aa10bcd02c96d2417fe3d1adf7fd90da2da95ca16ff9bb7b20b1ed3ac22c93bd3ac7f8d790768379407181f93bbc2c5bde5da5a4e47b400ed0827d815c47b4793349d894a557dd4436a7e2d7967b09faeff6b7037e5ba40202e850c0640414ffd651847bff2fe50ac248ac63cd595339b6fa9ee78f2835d29176d524ab9116894eab6ad5fd56c6600670d1f5bc4e48dfdaed740d1e3b3f1c05a067fbeb69e0a67226755569f185120d5b393131ecd3c209123994135a62d029cc5072264cd6cac0eb9d4ea8a63ae9b9675ecace48745f049d5d742639e2df80675ad114938eb641a8b1704`
+
+If we repeat this process with the other username, we now get two ciphertexts to try on the website. And the winner was... `billy`!!:
+
 ![website](/images/reply-crypto200-flag.png)
 
 Whoooop whoooop!
 
 <div style="padding: 15px; border: 1px solid transparent; border-color: transparent; margin-bottom: 20px; border-radius: 4px; color: #a94442; background-color: #f2dede; border-color: #ebccd1;">
-Initially I coded the script so that it would perform the bit flipping on the last block (the padding one). Since I though it made sense that I could change it since it was not relevant... Next time let's make sure you understand how the algorithm works before flipping things...
+Initially I coded the script so that it would perform the bit flipping on the last block (the padding one). I though it made sense that I could change it since it was not relevant... Next time let's make sure you understand how the algorithm works before flipping things...
 </div>
 
 Here you can see the whole script I used:
