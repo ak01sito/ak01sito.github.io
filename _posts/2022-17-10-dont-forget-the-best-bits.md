@@ -1,11 +1,20 @@
 ---
 title: Reply Challenges - Don't Forget the Best Bits
 date: 2022-10-17 00:28:00 -500
-categories: [ctf,crypto]
-tags: [reply,aes,cbc,bit_flipping]
+categories: [ctf,reply challenges]
+tags: [writeup,walkthrough,ctf,crypto,aes,cbc,bit_flipping,reply]
 ---
 
 This post is an attempt to document what I learned during the crypto200 challenge organized by [Reply Challenges](https://challenges.reply.com/tamtamy/home.action) last weekend. It was my first CTF and for sure not the last one!
+
+**Table of Contents**
+
+- [Overview](#overview)
+- [Getting the Right User](#getting-the-right-user)
+- [Understanding the Algorithm](#understanding-the-algorithm)
+- [Bit Flipping](#bit-flipping)
+- [Implementation](#implementation)
+
 
 # Overview
 To solve the challenge, we had some files to download (`notes.txt`, `app.snippet`, `_aes.py`) as well as a [URL](http://gamebox1.reply.it/14de018c45487063d3bc11fe33ac7e6996914988/). To find out what we need to solve here, let's take a look at all those things they gave us. 
