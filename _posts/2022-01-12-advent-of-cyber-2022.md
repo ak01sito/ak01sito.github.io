@@ -2,7 +2,7 @@
 title: Try Hack Me - Advent of Cyber 4 (2022)
 date: 2022-12-01 00:28:00 -500
 categories: [ctf,try hack me]
-tags: [writeup,walkthrough,frameworks,log analysis,OSINT]
+tags: [writeup,walkthrough,frameworks,log analysis,OSINT,Scanning]
 ---
 
 After waiting for a full year, it's finally back! [Try Hack Me](https://tryhackme.com) is hosting their famous [Advent of Cyber](https://tryhackme.com/room/adventofcyber4) for the 4th time. It consists of a series of beginner challenges, which you can complete every day from the first of December until Christmas. I thought it would be cool to give it a go, so I'll try to update everyday (or as soon as I can) for the different challenges I complete.
@@ -14,6 +14,7 @@ They have a cool story following the whole duration of the challenges, which exp
 - [Day 1 - Someone's coming to town! (Frameworks)](#day-1---someones-coming-to-town-frameworks)
 - [Day 2 - Santa's Naughty and Nice Log (Log Analysis)](#day-2---santas-naughty-and-nice-log-log-analysis)
 - [Day 3 - Nothing escapes detective McRed  (OSINT)](#day-3---nothing-escapes-detective-mcred--osint)
+- [Day 4 - Scanning through the snow (Scanning)](#day-4---scanning-through-the-snow-scanning)
 - [Next days incoming ...](#next-days-incoming-)
 
 # Day 1 - Someone's coming to town! (Frameworks)
@@ -153,6 +154,99 @@ So the answer is `qa.santagift.shop`.
 
 **What is the DB_PASSWORD that is being reused between the QA and PROD environments?**
 On the same `config.php` file we saw before, if we look for `DB_PASSWORD`, we see that the two occurrences have the same value (`S@nta2022`), and they are used `if($ENV = "QA")`, and `if($ENV = "PROD")`. Which means that the QA and PROD environments share the same value of `DB_PASSWORD`. The answer is then `S@nta2022`.
+
+See you tomorrow!
+
+# Day 4 - Scanning through the snow (Scanning)
+
+Today we will be scanning a host for open ports, and use the information from yesterday's challenge in order to see how the `santagift.shop` website was compromised.  
+
+First of all, let's see which ports are open and what are the services running on those.
+
+~~~
+└─$ nmap -sV <IP_ADDRESS>     
+Starting Nmap 7.91 ( https://nmap.org ) at 2022-12-04 17:52 CET
+Nmap scan report for <IP_ADDRESS>
+Host is up (0.041s latency).
+Not shown: 996 closed ports
+PORT    STATE SERVICE     VERSION
+22/tcp  open  ssh         OpenSSH 7.6p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)
+80/tcp  open  http        Apache httpd 2.4.29 ((Ubuntu))
+139/tcp open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+445/tcp open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+Service Info: Host: IP-<IP_ADDRESS>; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 13.12 seconds
+~~~
+
+With that, we can already answer the firsts questions:
+
+**What is the name of the HTTP server running on the remote host?** : `Apache`.
+
+**What is the name of the service running on port 22 on the QA server?** `ssh`.
+
+For the last two questions we will need to connect to the Samba service. Since I haven't used it much, I thought I would do it through `cli` (opposite to the way they show on the platform), and learn a bit for future challenges. We are given: 
+
+* Username : `ubuntu` 
+* password : `S@nta2022`
+* ip address : may vary. I'll show it as `<IP_ADDRESS>`
+
+First, to see which shares are available on this host, let's run `smbclient -U ubuntu -L <IP_ADDRESS>`, and enter the password when prompted: 
+
+~~~
+└─$ smbclient -U ubuntu -L <IP_ADDRESS> 
+Enter WORKGROUP\ubuntu's password: 
+
+        Sharename       Type      Comment
+        ---------       ----      -------
+        print$          Disk      Printer Drivers
+        sambashare      Disk      Samba on Ubuntu
+        admins          Disk      Samba on Ubuntu
+        IPC$            IPC       IPC Service (ip-<IP_ADDRESS> server (Samba, Ubuntu))
+SMB1 disabled -- no workgroup available
+~~~
+
+The share `admins` looks juicy, so let's access this one. The service would be called `\\<IP_ADDRESS>\admins`, yet due to shell restrictions we need to escape the backslashes, and we end up with: 
+
+~~~
+└─$ smbclient -U ubuntu \\\\<IP_ADDRESS>\\admins S@nta2022
+Try "help" to get a list of possible commands.
+smb: \> ls
+  .                                   D        0  Thu Nov 10 06:44:30 2022
+  ..                                  D        0  Wed Nov  9 18:43:21 2022
+  flag.txt                            A       23  Wed Nov  9 18:55:58 2022
+  userlist.txt                        A      111  Thu Nov 10 06:44:29 2022
+~~~
+
+Looks like we got it! Now we will use `smbget` to download the files from the share. 
+
+~~~
+└─$ smbget smb://<IP_ADDRESS>/admins/flag.txt -U "ubuntu%S@nta2022"
+Using workgroup WORKGROUP, user ubuntu
+smb://<IP_ADDRESS>/admins/flag.txt                                                                                  
+Downloaded 23b in 0 seconds
+
+└─$ cat flag.txt                         
+{THM_SANTA_SMB_SERVER}
+
+└─$ smbget smb://<IP_ADDRESS>/admins/userlist.txt -U "ubuntu%S@nta2022"
+Using workgroup WORKGROUP, user ubuntu
+smb://<IP_ADDRESS>/admins/userlist.txt                                                                              
+Downloaded 111b in 0 seconds
+
+└─$ cat userlist.txt 
+USERNAME        PASSWORD
+santa           santa101
+santahr         santa25
+santaciso       santa30
+santatech       santa200
+santaaccounts   santa400
+~~~
+
+**What flag can you find after successfully accessing the Samba service?** As we can see in the output of the `cat flag.txt` command, the flag is `{THM_SANTA_SMB_SERVER}`.
+
+**What is the password for the username santahr?** As we can see in the output of the `cat unserlist.txt` command, the password is `santa25`.
 
 See you tomorrow!
 
