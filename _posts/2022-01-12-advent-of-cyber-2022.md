@@ -2,7 +2,7 @@
 title: Try Hack Me - Advent of Cyber 4 (2022)
 date: 2022-12-01 00:28:00 -500
 categories: [ctf,try hack me]
-tags: [writeup,walkthrough,frameworks, log analysis]
+tags: [writeup,walkthrough,frameworks,log analysis,OSINT]
 ---
 
 After waiting for a full year, it's finally back! [Try Hack Me](https://tryhackme.com) is hosting their famous [Advent of Cyber](https://tryhackme.com/room/adventofcyber4) for the 4th time. It consists of a series of beginner challenges, which you can complete every day from the first of December until Christmas. I thought it would be cool to give it a go, so I'll try to update everyday (or as soon as I can) for the different challenges I complete.
@@ -13,6 +13,7 @@ They have a cool story following the whole duration of the challenges, which exp
 
 - [Day 1 - Someone's coming to town! (Frameworks)](#day-1---someones-coming-to-town-frameworks)
 - [Day 2 - Santa's Naughty and Nice Log (Log Analysis)](#day-2---santas-naughty-and-nice-log-log-analysis)
+- [Day 3 - Nothing escapes detective McRed  (OSINT)](#day-3---nothing-escapes-detective-mcred--osint)
 - [Next days incoming ...](#next-days-incoming-)
 
 # Day 1 - Someone's coming to town! (Frameworks)
@@ -125,5 +126,34 @@ THM{STOLENSANTASLIST}
 
 There it is! Second day solved
 
+# Day 3 - Nothing escapes detective McRed  (OSINT)
+
+Today's challenge is focused on OSINT, which is the data and information that is collected from publicly available sources. As always, we get a bit of information on the topic, which is really nicely explained and contains everything we need to solve the questions. So let's get to it:
+
+**What is the name of the Registrar for the domain santagift.shop?**
+Let's look for the domain's information in the [who.is](https://who.is/whois) website. We enter the domain `santagift.shop`, and the first thing on the information table we see is the *Registrar Info*, where we can see that the name is `NAMECHEAP INC`.
+
+**Find the website's source code (repository) on github.com and open the file containing sensitive credentials. Can you find the flag?**
+If we go to [GitHub](https://github.com), and search for `Santagiftshop` or `santagift.shop`, we will see the repository from muhammadthm: 
+
+![github repo](/images/adventofcyber_day3_1.png)
+
+
+Looking around a bit, we see that the flag is at the beginning  of the file `config.php`. So the answer is `THM_OSINT_WORKS`.
+
+**What is the name of the file containing passwords?**
+As said in the previous question, the file is `config.php`.
+
+**What is the name of the QA server associated with the website?**
+On the main page of the repository on GitHub, we can see that the `README` is already giving us the answer: 
+
+![github QA domain](/images/adventofcyber_day3_2.png)
+
+So the answer is `qa.santagift.shop`.
+
+**What is the DB_PASSWORD that is being reused between the QA and PROD environments?**
+On the same `config.php` file we saw before, if we look for `DB_PASSWORD`, we see that the two occurrences have the same value (`S@nta2022`), and they are used `if($ENV = "QA")`, and `if($ENV = "PROD")`. Which means that the QA and PROD environments share the same value of `DB_PASSWORD`. The answer is then `S@nta2022`.
+
+See you tomorrow!
 
 # Next days incoming ...
