@@ -208,10 +208,10 @@ Enter WORKGROUP\ubuntu's password:
 SMB1 disabled -- no workgroup available
 ~~~
 
-The share `admins` looks juicy, so let's access this one. The service would be called `\\<IP_ADDRESS>\admins`, yet due to shell restrictions we need to escape the backslashes, and we end up with: 
+The share `admins` looks juicy, so let's access this one. The service is called `//<IP_ADDRESS>/admins`: 
 
 ~~~
-└─$ smbclient -U ubuntu \\\\<IP_ADDRESS>\\admins S@nta2022
+└─$ smbclient -U ubuntu //<IP_ADDRESS>/admins S@nta2022
 Try "help" to get a list of possible commands.
 smb: \> ls
   .                                   D        0  Thu Nov 10 06:44:30 2022
