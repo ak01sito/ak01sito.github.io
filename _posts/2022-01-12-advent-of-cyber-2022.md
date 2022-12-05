@@ -20,39 +20,39 @@ They have a cool story following the whole duration of the challenges, which exp
 
 # Day 1 - Someone's coming to town! (Frameworks)
 
-When we press on the *View Site* green button, we can see a website in which we have to solve 3 puzzles. Those are not too difficult, but they teach us about the different phases of the **Unified Kill Chain**. The puzzles look as follow: 
+TOday we will be simply relating words with their definition. When we press on the *View Site* green button, we can see a website in which we have to solve 3 puzzles. Those are not too difficult, but they teach us about the different phases of the **Unified Kill Chain**. For each puzzle we have some deffinitions, and we need to see which piece goes where depending on that. The puzzles' clues and solutions look as follow: 
 
 **Puzzle 1**
 
-1. Research is part of my task, finding clues in public sources.
-2. Simple documents I turn into malware.
-3. A pizza, parcel or payload all have me as an action in common.
-4. A con is the name of my game, tricking you into believing a false identity.
-5. Weaknesses are my go-to resources; through them, I make my presence felt.
-6. I am set up to let you back into the network after you leave.
-7. Deletion of evidence is part of my process.
-8. Communication with the compromised goes through me.
+1. Research is part of my task, finding clues in public sources. **Reconnaissance**
+2. Simple documents I turn into malware. **Weaponisation**
+3. A pizza, parcel or payload all have me as an action in common. **Delivery**
+4. A con is the name of my game, tricking you into believing a false identity. **Social Engineering**
+5. Weaknesses are my go-to resources; through them, I make my presence felt. **Exploitation**
+6. I am set up to let you back into the network after you leave. **Persistence**
+7. Deletion of evidence is part of my process. **Defence Evasion**
+8. Communication with the compromised goes through me. **Command & Control**
 
 ![puzzle 1](/images/adventofcyber_puzzle1.png)
 
 **Puzzle 2**
 
-1. I am an anchor that lets you go on an adventure and explore.
-2. With me, you can locate new information to expand the attack.
-3. Once a pawn, I became a King.
-4. My payloads are triggered to infect all they come in contact with.
-5. Passwords I collect are the keys to the mainframe.
-6. Side to side, machine to machine, we hop.
+1. I am an anchor that lets you go on an adventure and explore. **Pivoting**
+2. With me, you can locate new information to expand the attack. **Discovery**
+3. Once a pawn, I became a King. **Privilege Escalation**
+4. My payloads are triggered to infect all they come in contact with. **Execution**
+5. Passwords I collect are the keys to the mainframe. **Credential Access**
+6. Side to side, machine to machine, we hop. **Lateral Movement**
 
 ![puzzle 2](/images/adventofcyber_puzzle2.png)
 
 **Puzzle 3**
 
-1. In your vault, I am in.
-2. Like a dragon, I gather all valuable loot.
-3. I export gathered treasures.
-4. With me, your reputation goes tumbling down.
-5. Goals set, goals attained. I win!
+1. In your vault, I am in. **Access**
+2. Like a dragon, I gather all valuable loot. **Collection**
+3. I export gathered treasures. **Exfiltration**
+4. With me, your reputation goes tumbling down. **Impact**
+5. Goals set, goals attained. I win! **Objectives**
 
 ![puzzle 3](/images/adventofcyber_puzzle3.png)
 
