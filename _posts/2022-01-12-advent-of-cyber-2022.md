@@ -2,7 +2,7 @@
 title: Try Hack Me - Advent of Cyber 4 (2022)
 date: 2022-12-01 00:28:00 -500
 categories: [ctf,try hack me]
-tags: [writeup,walkthrough,frameworks,log analysis,OSINT,scanning,brute-forcing]
+tags: [writeup,walkthrough,frameworks,log analysis,OSINT,scanning,brute-forcing,email analysis]
 ---
 
 After waiting for a full year, it's finally back! [Try Hack Me](https://tryhackme.com) is hosting their famous [Advent of Cyber](https://tryhackme.com/room/adventofcyber4) for the 4th time. It consists of a series of beginner challenges, which you can complete every day from the first of December until Christmas. I thought it would be cool to give it a go, so I'll try to update everyday (or as soon as I can) for the different challenges I complete.
@@ -16,6 +16,7 @@ They have a cool story following the whole duration of the challenges, which exp
 - [Day 3 - Nothing escapes detective McRed  (OSINT)](#day-3---nothing-escapes-detective-mcred--osint)
 - [Day 4 - Scanning through the snow (Scanning)](#day-4---scanning-through-the-snow-scanning)
 - [Day 5 - He knows when you're awake (Brute-Forcing)](#day-5---he-knows-when-youre-awake-brute-forcing)
+- [Day 6 - It's beginning to look a lot like phishing (Email Analysis)](#day-6---its-beginning-to-look-a-lot-like-phishing-email-analysis)
 - [Next days incoming ...](#next-days-incoming-)
 
 # Day 1 - Someone's coming to town! (Frameworks)
@@ -265,7 +266,7 @@ We will the use the tool *Hydra* for that. The command we want to use has the fo
 
 So we run `hydra -P /usr/share/wordlists/rockyou.txt 10.10.170.130 vnc`
 
-![puzzle 3](/images/adventofcyber_day5_hydra.png)
+![hydra](/images/adventofcyber_day5_hydra.png)
 
 After a while, it finds a valid pair, which means that there was no user, and the password is `1q2w3e4r`. 
 
@@ -300,5 +301,57 @@ Authentication successful
 And automatically, the remote target's window pops up:
 ![puzzle 3](/images/adventofcyber_day5_vnc.png)
 We can see on the background of the screen that the flag is `THM{I_SEE_YOUR_SCREEN}`.
+
+# Day 6 - It's beginning to look a lot like phishing (Email Analysis) 
+
+On today's challenge we'll be analyzing the headers and files on emails to determine if they are malicious, where did they actually come from, and so on. 
+
+After starting the machine, let's open the "Split View" on the platform. We see a Desktop with a file called `Urgent:.eml`. That's what we will be analyzing. 
+We will run the following command to get all the information from the file: `emlAnalyzer  -i Urgent\:.eml  --header --html -u --text --extract-all`
+
+![emlanalyzer](/images/adventofcyber_day6_emlanalyzer.png)
+
+**What is the email address of the sender?** `chief.elf@santaclaus.thm`
+
+**What is the return address?** `murphy.evident@bandityeti.thm`
+
+**On whose behalf was the email sent?** `Chief Elf`
+
+**What is the X-spam score?** `3`
+
+**What is hidden in the value of the Message-ID field?** We see the string `QW9DMjAyMl9FbWFpbF9BbmFseXNpcw==`, which looks like a base64 encoded message, so we decode it like: 
+```
+ubuntu@ip-10-10-102-13:~/Desktop$ echo QW9DMjAyMl9FbWFpbF9BbmFseXNpcw== | base64 -d 
+AoC2022_Email_Analysis
+```
+
+So the answer is `AoC2022_Email_Analysis`.
+
+**Visit the email reputation check website provided in the task. What is the reputation result of the sender's email address?** So we go to [this](https://emailrep.io/) website, which they provided in the task, and we search for `chief.elf@santaclaus.thm`
+
+![attachment](/images/adventofcyber_day6_risky.png)
+
+So the answer is `risky`.
+
+**Check the attachments. What is the filename of the attachment?** If we scroll down the output of the command, we see the "Attachment Extracting" part, where we see that the filename of the attachment is `Division_of_labour-Load_share_plan.doc`
+
+![attachment](/images/adventofcyber_day6_attachment.png)
+
+**What is the hash value of the attachment?** To calculate that, let's run the following commands: 
+
+```
+ubuntu@ip-10-10-102-13:~/Desktop$ cd eml_attachments/
+ubuntu@ip-10-10-102-13:~/Desktop/eml_attachments$ sha256sum Division_of_labour-Load_share_plan.doc 
+
+0827bb9a2e7c0628b82256759f0f888ca1abd6a2d903acdb8e44aca6a1a03467  Division_of_labour-Load_share_plan.doc
+```
+
+So the hash is `0827bb9a2e7c0628b82256759f0f888ca1abd6a2d903acdb8e44aca6a1a03467`
+
+**Visit the Virus Total website and use the hash value to search. Navigate to the behaviour section. What is the second tactic marked in the Mitre ATT&CK section?** Let's go to the [Virus Total](https://www.virustotal.com/gui/home/search) search tab, and enter the hash. Once found, we can navigate to the "Behavior" tab, and then we scroll down to the "Mitre ATT&CK" section, and there we see that the second tactic is `Defense Evasion`.
+
+**Visit the InQuest website and use the hash value to search.
+What is the subcategory of the file?** Let's go to the [InQuest](https://labs.inquest.net/) website, and search for the hash on the "Indicator Lookup". Once it finds a match, let's click on that and see that Subcategory:
+`macro_hunter`
 
 # Next days incoming ...
