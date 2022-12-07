@@ -17,6 +17,7 @@ They have a cool story following the whole duration of the challenges, which exp
 - [Day 4 - Scanning through the snow (Scanning)](#day-4---scanning-through-the-snow-scanning)
 - [Day 5 - He knows when you're awake (Brute-Forcing)](#day-5---he-knows-when-youre-awake-brute-forcing)
 - [Day 6 - It's beginning to look a lot like phishing (Email Analysis)](#day-6---its-beginning-to-look-a-lot-like-phishing-email-analysis)
+- [Day 7 - Maldocs roasting on an open fire (CyberChef)](#day-7---maldocs-roasting-on-an-open-fire-cyberchef)
 - [Next days incoming ...](#next-days-incoming-)
 
 # Day 1 - Someone's coming to town! (Frameworks)
@@ -353,5 +354,30 @@ So the hash is `0827bb9a2e7c0628b82256759f0f888ca1abd6a2d903acdb8e44aca6a1a03467
 **Visit the InQuest website and use the hash value to search.
 What is the subcategory of the file?** Let's go to the [InQuest](https://labs.inquest.net/) website, and search for the hash on the "Indicator Lookup". Once it finds a match, let's click on that and see that Subcategory:
 `macro_hunter`
+
+# Day 7 - Maldocs roasting on an open fire (CyberChef)
+
+Today we will be taking a look at [CyberChef](https://gchq.github.io/CyberChef/), and learning what we can use it for. Let's start by starting the machine, and going to Firefox, where there is an offline version of CyberChef on the bookmarks
+
+**What is the version of CyberChef found in the attached VM?** Once we enter CyberChef, on the url we can see that the version is `9.49.0`.
+
+**How many recipes were used to extract URLs from the malicious doc?** `10`. Those are the following ones: 
+1. **Strings**
+2. **Find/Replace** : To remove all `[`, `]`, and end of lines (`\n`).
+3. **Drop bytes** : To remove the initial text and keep only the base64 encoded text.
+4. **From Base64** : to decode the text.
+5. **Decode text** : to decode it from `UTF-16LE(1200` encoding.
+6. **Find/Replace** : to remove all `'`, `(`, `)`, `+`, `"`
+7. **Find/Replace** : to replace `]b2H_` for `http`.
+8. **Extract URLs**
+9. **Split** : to indicate where each url finishes.
+10. **Defang URL** : to make sure the URLs are not clickable.
+
+**We found a URL that was downloading a suspicious file; what is the name of that malware?** `mysterygift.exe`.
+
+**What is the last defanged URL of the bandityeti domain found in the last step?** `hxxps[://]cdn[.]bandityeti[.]THM/files/index/`
+
+**What is the ticket found in one of the domains? (Format: Domain/GOLDEN_FLAG)** 
+The domain is `https://www.secretSanta.THM/Goldenticket/THM_MYSTERY_FLAG`, so the ticket is `THM_MYSTERY_FLAG`.
 
 # Next days incoming ...
