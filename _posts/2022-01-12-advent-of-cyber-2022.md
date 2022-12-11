@@ -18,6 +18,7 @@ They have a cool story following the whole duration of the challenges, which exp
 - [Day 5 - He knows when you're awake (Brute-Forcing)](#day-5---he-knows-when-youre-awake-brute-forcing)
 - [Day 6 - It's beginning to look a lot like phishing (Email Analysis)](#day-6---its-beginning-to-look-a-lot-like-phishing-email-analysis)
 - [Day 7 - Maldocs roasting on an open fire (CyberChef)](#day-7---maldocs-roasting-on-an-open-fire-cyberchef)
+- [Day 8 - Last Christmas I gave you my ETH (Smart Contracts) (DRAFT)](#day-8---last-christmas-i-gave-you-my-eth-smart-contracts-draft)
 - [Next days incoming ...](#next-days-incoming-)
 
 # Day 1 - Someone's coming to town! (Frameworks)
@@ -379,5 +380,15 @@ Today we will be taking a look at [CyberChef](https://gchq.github.io/CyberChef/)
 
 **What is the ticket found in one of the domains? (Format: Domain/GOLDEN_FLAG)** 
 The domain is `https://www.secretSanta.THM/Goldenticket/THM_MYSTERY_FLAG`, so the ticket is `THM_MYSTERY_FLAG`.
+
+# Day 8 - Last Christmas I gave you my ETH (Smart Contracts) (DRAFT)
+
+Today we will be taking a look at smart contracts and how to exploit them. For that, we need to download the files tryhackme provides us with, and unzip it. We will then be using [Remix IDE](https://remix.ethereum.org/) to test and deploy contracts in a safe and controlled environment like if they were on a public blockchain.
+
+<div style="padding: 15px; border: 1px solid transparent; border-color: transparent; margin-bottom: 20px; border-radius: 4px; color: #a94442; background-color: #f2dede; border-color: #ebccd1;">
+Writeup for this challenge still incoming ....
+</div>
+
+**What flag is found after attacking the provided EtherStore Contract?** `flag{411_ur_37h_15_m1n3}`
 
 # Next days incoming ...
