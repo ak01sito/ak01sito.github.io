@@ -19,6 +19,7 @@ They have a cool story following the whole duration of the challenges, which exp
 - [Day 6 - It's beginning to look a lot like phishing (Email Analysis)](#day-6---its-beginning-to-look-a-lot-like-phishing-email-analysis)
 - [Day 7 - Maldocs roasting on an open fire (CyberChef)](#day-7---maldocs-roasting-on-an-open-fire-cyberchef)
 - [Day 8 - Last Christmas I gave you my ETH (Smart Contracts) (DRAFT)](#day-8---last-christmas-i-gave-you-my-eth-smart-contracts-draft)
+- [Day 14 - I'm dreaming of secure web apps (Web Application)](#day-14---im-dreaming-of-secure-web-apps-web-application)
 - [Next days incoming ...](#next-days-incoming-)
 
 # Day 1 - Someone's coming to town! (Frameworks)
@@ -390,5 +391,43 @@ Writeup for this challenge still incoming ....
 </div>
 
 **What flag is found after attacking the provided EtherStore Contract?** `flag{411_ur_37h_15_m1n3}`
+
+# Day 14 - I'm dreaming of secure web apps (Web Application)
+
+In today's challenge we will go over a really common Web Application vulnerability: IDOR (Insecure Direct Object Reference). IDOR is a type of application vulnerability that allows an attacker to execute commands based on user input, usually in a URL. Let's see how that works in a real example.
+
+Once we start the machine and get the IP (`10.10.13.236` in my case), we can scan it for open ports:
+
+```
+└─$ nmap -sV 10.10.13.236
+Starting Nmap 7.91 ( https://nmap.org ) at 2022-12-15 18:48 CET
+Nmap scan report for 10.10.13.236
+Host is up (0.059s latency).
+Not shown: 998 closed ports
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)
+8080/tcp open  http    Node.js Express framework
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+```
+
+We can see that there is an `http` service on port `8080`. We can try to access that now on our browser to see how this website looks. For that, let's navigate to `http://10.10.13.236:8080`.
+
+We can see a login page, quite expected since they gave us credentials already. So let's enter user =`mcskidy` and password=`devtest`. Once inside, we can see *Elf McSkidy* information:
+
+![elf](/images/adventofcyber_elfmcskidy.png)
+
+Now, let's answer some questions:
+
+**What is the office number of Elf Pivot McRed?** So they are asking for some information on the page... belonging to another user. How can we do that if we don't have their credentials? Quite easy with IDOR ;)
+
+Taking the url (`http://10.10.13.236:8080/users/101.html`), we can see that it's loading a `101.html` page. We can then ask ourselves, is there any `102.html` page? and `103.html`? Do I have access to them? Let's try it out. 
+
+When we change the url and request `http://10.10.13.236:8080/users/102.html`, we suddenly  get access to *Elf Log McBlue*'s information! If we keep changing the file to find *Elf Pivot McRead*, we'll find him at file `105.html`, and his office number is `134`.
+
+**Not only profile pages but also stored images are vulnerable. Start with a URL of a valid profile image; what is the hidden flag?** So they are already telling us that not only the url is vulnerable, but also the images. Let's find the place where they load the profile image in the  source code (we can see it when pressing `F12`). We will see the following code: 
+
+![src code](/images/adventofcyber_codeIDOR.png)
+
+So it's loading the profile image from `../images/101.png`. After trying again for a while, when I entered `../images/100.png`, we can see the profile picture substituted  by the flag `THM{CLOSE_THE_DOOR}`.
 
 # Next days incoming ...
