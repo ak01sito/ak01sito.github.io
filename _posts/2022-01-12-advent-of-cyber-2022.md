@@ -19,6 +19,7 @@ They have a cool story following the whole duration of the challenges, which exp
 - [Day 6 - It's beginning to look a lot like phishing (Email Analysis)](#day-6---its-beginning-to-look-a-lot-like-phishing-email-analysis)
 - [Day 7 - Maldocs roasting on an open fire (CyberChef)](#day-7---maldocs-roasting-on-an-open-fire-cyberchef)
 - [Day 8 - Last Christmas I gave you my ETH (Smart Contracts) (DRAFT)](#day-8---last-christmas-i-gave-you-my-eth-smart-contracts-draft)
+- [Day 10 - You're a mean one, Mr.Yeti (Hack a game)](#day-10---youre-a-mean-one-mryeti-hack-a-game)
 - [Day 14 - I'm dreaming of secure web apps (Web Application)](#day-14---im-dreaming-of-secure-web-apps-web-application)
 - [Next days incoming ...](#next-days-incoming-)
 
@@ -391,6 +392,52 @@ Writeup for this challenge still incoming ....
 </div>
 
 **What flag is found after attacking the provided EtherStore Contract?** `flag{411_ur_37h_15_m1n3}`
+
+# Day 10 - You're a mean one, Mr.Yeti (Hack a game)
+
+For today's challenge we will be using [Cetus](https://github.com/Qwokka/Cetus) to see into the memory addresses of a Web Assembly game in order to win it. I downloaded Cetus and will be solving the challenge from my own Kali Linux, but they already offer us a Kali ready to use with everything installed. 
+
+Once we open the game on the browser, we can open Cetus through the Developer Tools (on the `>>` icon).
+
+![game](/images/adventofcyber_day10_1.png)
+
+
+If we go talk with the blue-fox-thingy on the right, it explains to us that he is the Guard of the prison, and that he will let us go if we guess a random number between 1 and 99999999. The first time we try it, we cannot guess it for sure, but now we know the random number the Guard thought about: 
+
+![game 2](/images/adventofcyber_day10_2.png)
+
+As seen in the picture above, we can now search for that specific number in Cetus, and we find one result. The memory is saving the values in hexadecimal, but we can use some hexadecimal to decimal converter like [this one](https://www.rapidtables.com/convert/number/hex-to-decimal.html) to see that `1750bde = 24447966`. Now we can bookmark this address (using the little blue icon next to the result) in order to see how it changes on the *Bookmarks* tab.
+
+If we start talking to the Guard again, we see that the Value on this address changes, meaning that a new random value has been generated. This value is the one the Guard will be thinking about, so now we can convert it to decimal using the same [converter](https://www.rapidtables.com/convert/number/hex-to-decimal.html), and give that as input when prompted
+
+![game 3](/images/adventofcyber_day10_3.png)
+
+After we guess the number and the Guard freaks out, he will open the door. Before going through the door, if we talk to the Guard again, he will tell us the flag.
+
+**What is the Guard's flag?** `THM{5_star_Fl4gzzz}`
+
+If we keep moving to the bridge on the right of the map, we'll find some snowballs on the way which will inevitably kill us before we make it through. In order to make it to the other side, it would be really useful to have more life points. To do that, we need to find the memory address which holds that information. Unlike before, though, we have no idea which value is in that position. We need a way of finding it out through changes in the game. 
+
+Luckily for us, Cetus provides us with a way of doing that. We know that if we let a few snowballs hit us (but not kill us), our life points lower. If enough snowballs hit us and we lose all the life points, then they restart to the maximum amount. We can use this piece of information to find the memory address containing those points: 
+
+&nbsp;1. In case you did some searches on your own first, click *Restart Search*  
+&nbsp;2. Run an *EQ* search without entering any value. That will return us all the memory positions  
+&nbsp;3. Quickly enter the snowballs and try to go back before dying  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1. If you died because your life points were already low, go to step 4  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.2. Otherwise, select the *LT* (Lower Than) operator and perform another search (still without value). This will only select the memory addresses in which the value is lower than it was on the previous search (Which is what happened to our life points)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.3. If you are left with 3 addresses or less, go to step 5  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.4. Otherwise, go to step 3  
+&nbsp;4. Select the GT (Greater Than) operator and perform another search (still without value). This will only select the memory addresses in which the value is greater than it was on the previous search (since our life points just went up to their maximum value)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1. If you are left with 3 addresses or less, go to step 5  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2. Otherwise, go to step 3  
+&nbsp;5. Now that we have a low enough number of memory addresses, it's time to get unlimited life  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1. Bookmark the addresses and go to the *Bookmarks* tab on Cetus  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2. You can observe how they change when we lose life or die  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.3. Let's select the *Freeze* checkbox next to one of the bookmarked addresses  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.4. Go through the snowballs and be amazed by this magic and defeat the Yeti  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.5. Talk to the Yeti again, get the flag and get out of there  
+
+**What is the Yeti's flag?** `THM{yetiyetiyetiflagflagflag}`
 
 # Day 14 - I'm dreaming of secure web apps (Web Application)
 
