@@ -21,6 +21,7 @@ They have a cool story following the whole duration of the challenges, which exp
 - [Day 8 - Last Christmas I gave you my ETH (Smart Contracts) (DRAFT)](#day-8---last-christmas-i-gave-you-my-eth-smart-contracts-draft)
 - [Day 10 - You're a mean one, Mr.Yeti (Hack a game)](#day-10---youre-a-mean-one-mryeti-hack-a-game)
 - [Day 14 - I'm dreaming of secure web apps (Web Application)](#day-14---im-dreaming-of-secure-web-apps-web-application)
+- [Day 22 - Threats are failing all around me (Attack Surface Reduction)](#day-22---threats-are-failing-all-around-me-attack-surface-reduction)
 - [Next days incoming ...](#next-days-incoming-)
 
 # Day 1 - Someone's coming to town! (Frameworks)
@@ -476,5 +477,13 @@ When we change the url and request `http://10.10.13.236:8080/users/102.html`, we
 ![src code](/images/adventofcyber_codeIDOR.png)
 
 So it's loading the profile image from `../images/101.png`. After trying again for a while, when I entered `../images/100.png`, we can see the profile picture substituted  by the flag `THM{CLOSE_THE_DOOR}`.
+
+# Day 22 - Threats are failing all around me (Attack Surface Reduction)
+
+For today's challenge we simply need to match some Attack Surface Reductions actions to their corresponent attack vectors.
+
+![src code](/images/adventofcyber_ASR.png)
+
+After solving it, we get the flag: `THM{4TT4CK SURF4C3 R3DUC3D}`
 
 # Next days incoming ...
