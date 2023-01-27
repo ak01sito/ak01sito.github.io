@@ -22,6 +22,7 @@ They have a cool story following the whole duration of the challenges, which exp
 - [Day 10 - You're a mean one, Mr.Yeti (Hack a game)](#day-10---youre-a-mean-one-mryeti-hack-a-game)
 - [Day 14 - I'm dreaming of secure web apps (Web Application)](#day-14---im-dreaming-of-secure-web-apps-web-application)
 - [Day 22 - Threats are failing all around me (Attack Surface Reduction)](#day-22---threats-are-failing-all-around-me-attack-surface-reduction)
+- [Day 23 - Mission ELFPossible: Abominable for a Day  (Defence in Depth)](#day-23---mission-elfpossible-abominable-for-a-day--defence-in-depth)
 - [Next days incoming ...](#next-days-incoming-)
 
 # Day 1 - Someone's coming to town! (Frameworks)
@@ -485,5 +486,74 @@ For today's challenge we simply need to match some Attack Surface Reductions act
 ![src code](/images/adventofcyber_ASR.png)
 
 After solving it, we get the flag: `THM{4TT4CK SURF4C3 R3DUC3D}`
+
+# Day 23 - Mission ELFPossible: Abominable for a Day  (Defence in Depth)
+
+In today's challenge we are going to play as if we were the Yeti, who is trying to infiltrate Santa's system. There will be 3 different cases, each with increasing difficulty, as more security levels will be added. Our objective in each of the cases is to get inside the perimeter, locate the vault area, and get access to it without being caught. Let's start: 
+
+***First level***
+
+On the first level, Santa's security is focused on the perimeter. Given that, we can expect that there may be complete trust within the compound. 
+
+Going directly to the gate seems too risky, so we try talking to the guard. He asks us what our purpose is for the visit, and out of the possible answers we get, "Delivery for Santa's EA" seems the one which is less prone to get more questions in return. Indeed, he does not ask anything, and if we now press on the gate we can enter and see different buildings. 
+
+We see there is a building which is Santa's Office. There we find the vault, but it needs a password.
+
+If we go to the Executive Assistant (EA) Office, and look at the drawer in the dest, we will find a little note with the following info: `Santa's Vault Password : S3cr3tV@ultPW`
+
+**Case 1: What is the password for Santa’s Vault?**  `S3cr3tV@ultPW`
+
+**Case 1: What is the Flag?** Now we can go back to the vault and put the password. Once we do it, we can get the naughty or nice list and get the flag: `THM{EZ_fl@6!}`
+
+***Second level***
+
+At this level, Santa's security is ramped up. It has additional defense layers in place, but their main focus is prevention. We might be able to bypass them if we are patient and we play our cards right.
+
+Same as before, we tell him we have a delivery and the security guard lets us in.
+
+**Case 2: What is Santa’s favourite thing?** We enter the EA office again and there is a post-it that says `Prepare: MilkAndCookies`. We assume then that Santa's favourite thing are `MilkAndCookies`.
+
+**Case 2: What is the password for Santa’s Vault?** We go to Santa's Office, and on the laptop it's prompting us to enter a Password Hint.  We write `MilkAndCookies`, and we get a text with the password for the vault. `3XtrR@_S3cr3tV@ultPW`.
+
+**Case 2: What is the Flag?** Once we enter the password into the vault, we get the flag: `THM{m0@r_5t3pS_n0w!}`
+
+***Third level***
+
+At this level, Santa's security is at the maximum! Aside from the previous case's additional defense layers, Santa's defenses give feedback to the security team. Our room for mistakes  is very thin, and we should play our cards right the first time.
+
+Same as before, we tell the guard we have a delivery and he lets us in. This time, though, he gives us an EA Pass, and warns us that we can only go to the EA Office.
+
+In the EA Office we can steal Santa's pass on the first drawer.
+
+**Case 3: What is the Executive Assistant’s favourite thing?** Still in the EA Office, if we look at the post-it, we see the following reminders:
+
+~~~
+Buy my favorite BanoffeePie.
+Remind Santa to change his laptop password and make it harder to guess! Everyone knows his tendency to be lazy and repetitive...
+~~~
+
+So the answer to this question is `BanoffeePie`.
+
+Then we try to enter the laptop in this office. And... surprise, the password is `BanoffeePie`. (I then realised there was a Password hint saying `My Favourite!`, so it was quite obvious).
+
+And if we look in the trash we can see another note saying `OldPW.txt : H0tCh0coL@t3_01`
+
+**Case 3: What is Santa’s previous password?** On this laptop in the EA Office, if we look at the trash we see a fie saying `OldPW.txt : H0tCh0coL@t3_01`, so the old password is `H0tCh0coL@t3_01`.
+
+**Case 3: What is Santa’s current password?** We got a clue before, stating that Santa has a tendency of being lazy and repetitive, which means it's reaaaaally probable that his new password is simply `H0tCh0coL@t3_02`.
+
+**Case 3: What is the 1st part of the vault’s password?** Once we know Santa's password, we can go to his Office and unlock the laptop with that password (). Inside we find a file `Vault (1/2).txt : N3w4nd1m`. So the first part of the vault's password is `N3w4nd1m`.
+
+**Case 3: What is the 2nd part of the vault’s password?** As we found before in the file In the laptop on the EA Office there was also a file called `Vault(2/2).txt`. In there we find out that the 2nd part of the vault's password is `Pr0v3dV@ultPW`.
+
+**Case 3: What is the password for Santa’s Vault?** If we put together the two parts of the password that we got, we get `N3w4nd1mPr0v3dV@ultPW`
+
+When we open the vault, we get the flag and Santa's Code
+
+**Case 3: What is the Flag?** `THM{B@d_Y3t1_1s_n@u6hty}`
+
+**What is Santa's Code?** `2845`
+
+**Mission ELFPossible: What is the Abominable for a Day Flag?** Finally, we go to Santa's Workshop building, and we enter the Code `2845`. Then we enter and retrieve the final flag: `THM{D3f3n5e_1n_D3pth_1s_k00L!!}`
 
 # Next days incoming ...
