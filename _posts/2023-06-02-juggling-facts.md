@@ -79,7 +79,7 @@ Because of this performance, there are two ways of comparing equality between va
 1. `==`  loose comparison : compares two variables after type juggling.
 2. `===` or strict comparison : compares two variables AND their types.
 
-[here] there are comparison tables to understand how these operators behave with variables of the same and different types. 
+[Here](https://www.php.net/manual/en/types.comparisons.php) we can see comparison tables to understand how these operators behave with variables of the same and different types. 
 
 For this challenge, we can take advantage of the fact that the two checks are done with different operators, and so we can actually get different results. We need to accomplish the following:
 
@@ -87,7 +87,7 @@ For this challenge, we can take advantage of the fact that the two checks are do
 * `$jsondata['type'] === 'secrets' --> FALSE`
 * `$jsondata['type'] == 'secrets' --> TRUE` ([here](https://www.php.net/manual/en/control-structures.switch.php) we can see that the `switch` structure performs a loose comparison or `==`).
 
-Looking at the comparison tables given before, we see that:
+Looking at the [comparison tables](https://www.php.net/manual/en/types.comparisons.php), we see that:
 ![comparison table loose](/images/juggling_loose.png)
 ![comparison table strict](/images/juggling_strict.png)
 
